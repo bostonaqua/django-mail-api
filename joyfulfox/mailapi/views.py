@@ -13,7 +13,7 @@ def index(request):
 
 @csrf_exempt
 def send_mail_view(request):
-    if not request.is_ajax():
+    if request.is_ajax():
         if request.method == 'POST':
             json_data = json.loads(request.body.decode('utf-8'))
             try:
