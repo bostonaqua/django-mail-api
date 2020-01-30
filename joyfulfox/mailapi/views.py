@@ -1,4 +1,4 @@
-from django.http import HttpResponseServerError
+from django.http import HttpResponseServerError, JsonResponse
 from django.core.mail import send_mail
 from django.core.mail.backends.smtp import EmailBackend
 from django.shortcuts import HttpResponse
@@ -13,6 +13,13 @@ def index(request):
 
 @csrf_exempt
 def send_mail_view(request):
+    if request.method == 'OPTIONS':
+        response = HttpResponse("ok")
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Headers"] = "User-Agent,Cache-Control,Content-Type"
+        response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response["Access-Control-Expose-Headers"] = "Content-Length,Content-Range"
+        return response
     if request.method == 'POST':
         json_data = json.loads(request.body.decode('utf-8'))
         try:
@@ -31,10 +38,22 @@ def send_mail_view(request):
                 ['{}'.format(mail_to)],
                 auth_user=username,
                 auth_password=password,
-                connection=EmailBackend(host=host, port=port, username=username, password=password)
+                connection=EmailBackend(host=host, port=port, username=username, password=password, use_ssl=True)
             )
-        except KeyError:
-            return HttpResponseServerError("Malformed data!")
-        return HttpResponse("OK")
+            response = JsonResponse(
+                {"status": "completed"}
+            )
+            response["Access-Control-Allow-Origin"] = "*"
+            response["Access-Control-Allow-Headers"] = "User-Agent,Cache-Control,Content-Type"
+            response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+            response["Access-Control-Expose-Headers"] = "Content-Length,Content-Range"
+        except (KeyError, ConnectionRefusedError):
+            err_response = HttpResponseServerError("Malformed data!")
+            err_response["Access-Control-Allow-Origin"] = "*"
+            err_response["Access-Control-Allow-Headers"] = "User-Agent,Cache-Control,Content-Type"
+            err_response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+            err_response["Access-Control-Expose-Headers"] = "Content-Length,Content-Range"
+            return err_response
+        return response
     else:
         return HttpResponseServerError("Service unavailable")
