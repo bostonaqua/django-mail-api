@@ -30,15 +30,12 @@ def send_mail_view(request):
             subject = json_data['subject']
             message = json_data['message']
             username = json_data['username']
-            password = json_data['password']
             send_mail(
                 "{} - {}".format(subject, mail_from),
                 "{}\n\n---\nFrom: {}".format(message, mail_from),
                 "{}".format(username),
                 ['{}'.format(mail_to)],
-                auth_user=username,
-                auth_password=password,
-                connection=EmailBackend(host=host, port=port, username=username, password=password, use_ssl=True)
+                connection=EmailBackend(host=host, port=port, username=username, password="***", use_tls=True)
             )
             response = JsonResponse(
                 {"status": "completed"}
@@ -47,8 +44,8 @@ def send_mail_view(request):
             response["Access-Control-Allow-Headers"] = "User-Agent,Cache-Control,Content-Type"
             response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
             response["Access-Control-Expose-Headers"] = "Content-Length,Content-Range"
-        except (KeyError, ConnectionRefusedError):
-            err_response = HttpResponseServerError("Malformed data!")
+        except (KeyError, ConnectionRefusedError) as e:
+            err_response = HttpResponseServerError("Malformed data! {}".format(e))
             err_response["Access-Control-Allow-Origin"] = "*"
             err_response["Access-Control-Allow-Headers"] = "User-Agent,Cache-Control,Content-Type"
             err_response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
